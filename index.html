@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>粉嶺官立中學｜設計與應用科技科｜粗幼線條技巧</title>
+  <style>
+    :root {
+      --bg: #eef2f0;
+      --panel: rgba(255, 255, 255, 0.94);
+      --ink: #1a1a1a;
+      --accent: #b91c1c;
+      --accent-dark: #7f1d1d;
+      --green: #1b4332;
+      --border: #94a3a0;
+      --thin: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Heiti TC", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      touch-action: none;
+    }
+    #canvas-wrap { position: absolute; inset: 0; }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    header {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      pointer-events: auto;
+    }
+    .title-card { max-width: min(520px, 100%); }
+    .title-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .title-brand .crest {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      flex-shrink: 0;
+      background: #fff;
+      border-radius: 8px;
+    }
+    .title-brand .titles { min-width: 0; }
+    .title-brand .school {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--green);
+      line-height: 1.3;
+    }
+    .title-brand .dept {
+      margin-top: 2px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #14532d;
+      line-height: 1.3;
+    }
+    .title-brand .lesson {
+      margin-top: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent-dark);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      background: #fee2e2;
+      color: var(--accent-dark);
+      border: 1px solid #fecaca;
+      letter-spacing: 0.02em;
+    }
+    .title-card .sub {
+      margin-top: 8px;
+      font-size: 0.82rem;
+      color: #475569;
+      line-height: 1.45;
+    }
+
+    .rule-card {
+      max-width: min(360px, 100%);
+      border-left: 4px solid var(--accent);
+    }
+    .rule-card h2 {
+      font-size: 0.88rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--accent-dark);
+    }
+    .rule-card ul {
+      list-style: none;
+      font-size: 0.86rem;
+      line-height: 1.55;
+      color: #334155;
+    }
+    .rule-card li { margin-bottom: 4px; padding-left: 0; }
+    .rule-card .swatch {
+      display: inline-block;
+      width: 28px;
+      height: 4px;
+      border-radius: 2px;
+      vertical-align: middle;
+      margin: 0 4px;
+    }
+    .rule-card .swatch.thick { background: #e11d48; height: 6px; }
+    .rule-card .swatch.thin { background: #334155; height: 2px; }
+    .rule-card.hidden { display: none; }
+
+    .toolbar {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 12px;
+      width: min(720px, 100%);
+    }
+    .toolbar button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      min-height: 44px;
+      touch-action: manipulation;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .toolbar button:hover { background: #fff; }
+    .toolbar button:active { transform: scale(0.97); }
+    .toolbar button.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .toolbar button.active-green {
+      background: var(--green);
+      color: #fff;
+      border-color: var(--green);
+    }
+
+    #ref-panel {
+      display: none;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 12;
+      width: min(320px, 46vw);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.14);
+      pointer-events: auto;
+    }
+    #ref-panel.visible { display: block; }
+    #ref-panel img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      display: block;
+      cursor: zoom-in;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+    }
+    #ref-panel .cap {
+      font-size: 0.75rem;
+      color: #556;
+      margin-top: 8px;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(15, 23, 42, 0.78);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      cursor: zoom-out;
+    }
+    #lightbox.visible { display: flex; }
+    #lightbox img {
+      max-width: min(900px, 96vw);
+      max-height: 90vh;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+    }
+
+    .hint {
+      position: absolute;
+      bottom: 78px;
+      left: 12px;
+      z-index: 9;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      color: #475569;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      pointer-events: none;
+      max-width: 220px;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 640px) {
+      .title-brand .crest { width: 52px; height: 52px; }
+      .title-brand .school { font-size: 0.95rem; }
+      .title-brand .dept { font-size: 0.88rem; }
+      .rule-card { font-size: 0.9rem; }
+      .toolbar button { font-size: 0.78rem; padding: 9px 11px; }
+      #ref-panel { top: auto; bottom: 78px; right: 8px; left: 8px; width: auto; }
+      .hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-wrap"></div>
+
+  <header>
+    <div class="title-card card">
+      <div class="title-brand">
+        <img class="crest" src="school-crest.png" alt="粉嶺官立中學校徽" width="64" height="64" />
+        <div class="titles">
+          <div class="school">粉嶺官立中學</div>
+          <div class="dept">設計與應用科技科</div>
+          <div class="lesson"><span class="badge">課堂互動</span> 粗幼線條技巧</div>
+        </div>
+      </div>
+      <p class="sub">拖曳轉動立體　·　滾輪／雙指縮放　·　紅色粗線會跟住視角即時更新</p>
+    </div>
+    <div class="rule-card card" id="rule-card">
+      <h2>粗幼線法則</h2>
+      <ul>
+        <li>兩邊面都見得到 → 幼線 <span class="swatch thin" title="幼線"></span></li>
+        <li>只見一面 → 粗線（外形輪廓） <span class="swatch thick" title="粗線"></span></li>
+        <li><strong style="color:#be123c">紅色粗線</strong> = 依現時視角應加粗嘅邊</li>
+      </ul>
+    </div>
+  </header>
+
+  <div id="ref-panel" aria-hidden="true">
+    <img id="ref-thumb" src="reference.png" alt="粗幼線條技巧參考圖" />
+    <div class="cap">工作紙示範：左＝全部幼線；右＝按法則加粗<br/>點擊圖片可放大</div>
+  </div>
+
+  <div id="lightbox" aria-hidden="true">
+    <img src="reference.png" alt="參考圖放大" />
+  </div>
+
+  <div class="hint">提示：慢慢轉動，觀察邊線何時變紅變粗</div>
+
+  <div class="toolbar">
+    <button type="button" id="btn-reset">重設視角</button>
+    <button type="button" id="btn-thick" class="active">顯示／隱藏紅粗線</button>
+    <button type="button" id="btn-thin" class="active-green">顯示／隱藏幼線</button>
+    <button type="button" id="btn-rule" class="active-green">顯示法則說明</button>
+    <button type="button" id="btn-ref">顯示參考圖</button>
+  </div>
+
+  <script src="vendor/three.min.js"></script>
+  <script src="vendor/OrbitControls.js"></script>
+  <script>
+/**
+ * 粗幼線條技巧教學 — 剪影邊（silhouette edge）即時偵測
+ *
+ * 法則：
+ *   邊線相鄰兩面都面向鏡頭 → 幼線
+ *   邊線相鄰兩面之中只有一面面向鏡頭 → 粗線
+ *
+ * 實作：為每個邏輯面保存外向法線；每幀用 normal · towardCamera 判斷可見；
+ * 邊線兩邊面可見性 XOR → 粗線。
+ */
+(function () {
+  'use strict';
+
+  // ========== 幾何尺寸（近似示範圖：高長方體 + 向上三角通孔）==========
+  var W = 4.0;   // X 寬
+  var H = 5.6;   // Y 高（略高於寬）
+  var D = 2.4;   // Z 深
+  var halfW = W / 2, halfH = H / 2, halfD = D / 2;
+
+  // 三角形通孔（尖向上），置中於正面
+  var triApexY = 1.55;
+  var triBaseY = -1.15;
+  var triHalfW = 1.35;
+
+  var wrap = document.getElementById('canvas-wrap');
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xeef2f0);
+
+  var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+  var defaultCamPos = new THREE.Vector3(-7.2, 5.4, 8.5);
+  camera.position.copy(defaultCamPos);
+
+  var renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  wrap.appendChild(renderer.domElement);
+
+  var controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.screenSpacePanning = true;
+  controls.minDistance = 4;
+  controls.maxDistance = 36;
+  controls.target.set(0, 0, 0);
+  controls.update();
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.78));
+  var key = new THREE.DirectionalLight(0xffffff, 0.5);
+  key.position.set(5, 12, 6);
+  scene.add(key);
+  var fill = new THREE.DirectionalLight(0xffffff, 0.28);
+  fill.position.set(-6, 3, -4);
+  scene.add(fill);
+
+  var grid = new THREE.GridHelper(28, 28, 0xb0c4b8, 0xd0ddd4);
+  grid.position.y = -halfH;
+  scene.add(grid);
+
+  // ---------- 頂點 ----------
+  // 外殼 8 角
+  var V = {
+    // front (z = +halfD)
+    FBL: new THREE.Vector3(-halfW, -halfH,  halfD),
+    FBR: new THREE.Vector3( halfW, -halfH,  halfD),
+    FTR: new THREE.Vector3( halfW,  halfH,  halfD),
+    FTL: new THREE.Vector3(-halfW,  halfH,  halfD),
+    // back (z = -halfD)
+    BBL: new THREE.Vector3(-halfW, -halfH, -halfD),
+    BBR: new THREE.Vector3( halfW, -halfH, -halfD),
+    BTR: new THREE.Vector3( halfW,  halfH, -halfD),
+    BTL: new THREE.Vector3(-halfW,  halfH, -halfD),
+    // triangle front
+    FTA: new THREE.Vector3(0,          triApexY,  halfD),
+    FTL_tri: new THREE.Vector3(-triHalfW, triBaseY, halfD), // bottom-left of tri
+    FTR_tri: new THREE.Vector3( triHalfW, triBaseY, halfD), // bottom-right of tri
+    // triangle back
+    BTA: new THREE.Vector3(0,          triApexY, -halfD),
+    BTL_tri: new THREE.Vector3(-triHalfW, triBaseY, -halfD),
+    BTR_tri: new THREE.Vector3( triHalfW, triBaseY, -halfD)
+  };
+
+  /**
+   * 邏輯面：每個平面區域一張（外殼 6 面中前後有孔，另加隧道 3 面）
+   * verts：由外向內看為 CCW（右手定則 → 外向法線）
+   * 有孔的面會額外提供 hole（孔洞邊界，由外向內看為 CW）
+   */
+  var logicalFaces = [];
+
+  function addFace(name, verts, holeVerts) {
+    var f = { name: name, verts: verts, hole: holeVerts || null, normal: new THREE.Vector3(), center: new THREE.Vector3() };
+    // 法線：取首三點（略過共線情況用多點平均）
+    var n = new THREE.Vector3();
+    var c = new THREE.Vector3();
+    var i, a, b;
+    for (i = 0; i < verts.length; i++) c.add(verts[i]);
+    c.multiplyScalar(1 / verts.length);
+    f.center.copy(c);
+    for (i = 0; i < verts.length; i++) {
+      a = verts[i].clone().sub(c);
+      b = verts[(i + 1) % verts.length].clone().sub(c);
+      n.add(new THREE.Vector3().crossVectors(a, b));
+    }
+    if (n.lengthSq() < 1e-12) {
+      n.crossVectors(
+        verts[1].clone().sub(verts[0]),
+        verts[2].clone().sub(verts[0])
+      );
+    }
+    n.normalize();
+    // 確保外向：由物體中心指向面心
+    var outward = c.clone(); // center is near 0; face center from origin
+    if (n.dot(outward) < 0) n.negate();
+    f.normal.copy(n);
+    logicalFaces.push(f);
+    return f;
+  }
+
+  // 正面（+Z）外框 CCW（由 +Z 外望入：左下→右下→右上→左上）
+  // 孔 CW：尖→右底→左底
+  addFace('front',
+    [V.FBL, V.FBR, V.FTR, V.FTL],
+    [V.FTA, V.FTR_tri, V.FTL_tri]
+  );
+  // 背面（-Z）：由 -Z 外望（望向 +Z），CCW 左下→右下→右上→左上 = BBL,BBR,BTR,BTL
+  // 但右手定則在背面要外向 -Z，由外望入時 CCW 應產生指向觀者（-Z）的法線。
+  // 觀者在 -Z 望 +Z：畫面左=-X，故左下=BBL，右下=BBR … CCW: BBL→BBR→BTR→BTL
+  addFace('back',
+    [V.BBL, V.BBR, V.BTR, V.BTL],
+    [V.BTA, V.BTR_tri, V.BTL_tri]
+  );
+  // 上面（+Y）
+  addFace('top', [V.FTL, V.FTR, V.BTR, V.BTL]);
+  // 下面（-Y）
+  addFace('bottom', [V.FBL, V.BBL, V.BBR, V.FBR]);
+  // 左面（-X）
+  addFace('left', [V.FTL, V.BTL, V.BBL, V.FBL]);
+  // 右面（+X）
+  addFace('right', [V.FTR, V.FBR, V.BBR, V.BTR]);
+
+  // 隧道三面（孔壁，法線指向孔內空腔＝由實心指向空）
+  // 底面（三角底邊擠出）：由下向上看法線應指向 +Y（孔內）
+  addFace('hole-floor', [V.FTL_tri, V.FTR_tri, V.BTR_tri, V.BTL_tri]);
+  // 左斜面：尖-左底（front）→ 左底-尖（back）
+  addFace('hole-left', [V.FTA, V.FTL_tri, V.BTL_tri, V.BTA]);
+  // 右斜面
+  addFace('hole-right', [V.FTA, V.BTA, V.BTR_tri, V.FTR_tri]);
+
+  // 修正孔壁法線：應指向孔中心（空腔），而非物體外
+  (function fixHoleNormals() {
+    var holeCenter = new THREE.Vector3(0, (triApexY + triBaseY) / 2, 0);
+    ['hole-floor', 'hole-left', 'hole-right'].forEach(function (name) {
+      var f = logicalFaces.find(function (x) { return x.name === name; });
+      if (!f) return;
+      // 由面心指向孔中心的方向 = 內向（朝空腔）
+      var toHole = holeCenter.clone().sub(f.center);
+      if (f.normal.dot(toHole) < 0) f.normal.negate();
+      // 孔壁「外向」對實心而言係指向空腔；剪影法則用嘅係「面係咪面向鏡頭」
+      // 對孔壁：若法線指向空腔，當我哋由外望入見到孔壁時，法線大致望向鏡頭。
+    });
+  })();
+
+  // ---------- 由邏輯面建立邊線鄰接 ----------
+  function vertKey(v) {
+    return v.x.toFixed(5) + ',' + v.y.toFixed(5) + ',' + v.z.toFixed(5);
+  }
+  function edgeKey(a, b) {
+    var ka = vertKey(a), kb = vertKey(b);
+    return ka < kb ? ka + '|' + kb : kb + '|' + ka;
+  }
+
+  var edgeMap = {}; // key -> { a, b, faces: [faceIndex, ...] }
+
+  function registerLoop(faceIndex, loop, reverse) {
+    var n = loop.length;
+    var i, a, b;
+    for (i = 0; i < n; i++) {
+      a = loop[i];
+      b = loop[(i + 1) % n];
+      if (reverse) { var t = a; a = b; b = t; }
+      var k = edgeKey(a, b);
+      if (!edgeMap[k]) edgeMap[k] = { a: a.clone(), b: b.clone(), faces: [] };
+      if (edgeMap[k].faces.indexOf(faceIndex) < 0) edgeMap[k].faces.push(faceIndex);
+    }
+  }
+
+  logicalFaces.forEach(function (f, fi) {
+    registerLoop(fi, f.verts, false);
+    if (f.hole) registerLoop(fi, f.hole, false);
+  });
+
+  var edges = Object.keys(edgeMap).map(function (k) { return edgeMap[k]; });
+
+  // ---------- 建立實體 Mesh（三角化每張邏輯面）----------
+  function fanTriangulate(outer, hole) {
+    // 簡單策略：無孔 → fan；有孔 → 將外框與孔頂點組成三角形帶
+    var tris = [];
+    var i;
+    if (!hole) {
+      for (i = 1; i < outer.length - 1; i++) {
+        tris.push(outer[0], outer[i], outer[i + 1]);
+      }
+      return tris;
+    }
+    // 矩形外框 + 三角孔：用固定連接（適用本幾何）
+    // outer: 0=BL,1=BR,2=TR,3=TL ; hole: 0=apex,1=BR_tri,2=BL_tri
+    var o = outer, h = hole;
+    // 底帶
+    tris.push(o[0], o[1], h[1]);
+    tris.push(o[0], h[1], h[2]);
+    // 右帶
+    tris.push(o[1], o[2], h[1]);
+    tris.push(h[1], o[2], h[0]);
+    // 頂帶
+    tris.push(o[2], o[3], h[0]);
+    // 左帶
+    tris.push(o[3], o[0], h[2]);
+    tris.push(o[3], h[2], h[0]);
+    return tris;
+  }
+
+  var meshPositions = [];
+  logicalFaces.forEach(function (f) {
+    var tris;
+    if (f.name === 'front' || f.name === 'back') {
+      tris = fanTriangulate(f.verts, f.hole);
+    } else {
+      tris = fanTriangulate(f.verts, null);
+    }
+    // 確保三角面向外：檢查與 f.normal 一致
+    for (var i = 0; i < tris.length; i += 3) {
+      var a = tris[i], b = tris[i + 1], c = tris[i + 2];
+      var e1 = b.clone().sub(a);
+      var e2 = c.clone().sub(a);
+      var tn = new THREE.Vector3().crossVectors(e1, e2);
+      if (tn.dot(f.normal) < 0) {
+        meshPositions.push(a.x, a.y, a.z, c.x, c.y, c.z, b.x, b.y, b.z);
+      } else {
+        meshPositions.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
+      }
+    }
+  });
+
+  var solidGeo = new THREE.BufferGeometry();
+  solidGeo.setAttribute('position', new THREE.Float32BufferAttribute(meshPositions, 3));
+  solidGeo.computeVertexNormals();
+
+  var faceMat = new THREE.MeshStandardMaterial({
+    color: 0xf7f7f4,
+    roughness: 0.82,
+    metalness: 0.03,
+    flatShading: true,
+    side: THREE.DoubleSide
+  });
+  var solidMesh = new THREE.Mesh(solidGeo, faceMat);
+  scene.add(solidMesh);
+
+  // ---------- 幼線（LineSegments）與粗線（紅色 Tube）----------
+  var thinPositions = new Float32Array(edges.length * 6);
+  var thinGeo = new THREE.BufferGeometry();
+  thinGeo.setAttribute('position', new THREE.BufferAttribute(thinPositions, 3));
+  var thinMat = new THREE.LineBasicMaterial({ color: 0x334155, depthTest: true });
+  var thinLines = new THREE.LineSegments(thinGeo, thinMat);
+  scene.add(thinLines);
+
+  // 粗線用短圓柱／管狀 mesh，避免 WebGL linewidth=1 限制
+  var thickGroup = new THREE.Group();
+  scene.add(thickGroup);
+  var thickMat = new THREE.MeshBasicMaterial({ color: 0xe11d48 });
+  var THICK_RADIUS = 0.045;
+  var thickMeshes = []; // 每條邊一個 cylinder，按需要顯示
+
+  function makeThickSegment(a, b) {
+    var dir = new THREE.Vector3().subVectors(b, a);
+    var len = dir.length();
+    if (len < 1e-6) return null;
+    var geo = new THREE.CylinderGeometry(THICK_RADIUS, THICK_RADIUS, len, 6, 1, false);
+    var mesh = new THREE.Mesh(geo, thickMat);
+    mesh.position.copy(a).add(b).multiplyScalar(0.5);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    mesh.visible = false;
+    thickGroup.add(mesh);
+    return mesh;
+  }
+
+  edges.forEach(function (e) {
+    e.thickMesh = makeThickSegment(e.a, e.b);
+  });
+
+  // ---------- 剪影偵測（每幀）----------
+  var EPS = 1e-4;
+  var tmpCam = new THREE.Vector3();
+  var toward = new THREE.Vector3();
+  var faceVisible = new Array(logicalFaces.length);
+
+  function updateSilhouette() {
+    // 鏡頭位置（世界＝物體空間，因 mesh 無 transform）
+    tmpCam.copy(camera.position);
+    var i, f, visA, visB, isThick, e, idx;
+
+    for (i = 0; i < logicalFaces.length; i++) {
+      f = logicalFaces[i];
+      // towardCamera：由面心指向鏡頭
+      toward.copy(tmpCam).sub(f.center);
+      // 面「可見」：外向法線與 towardCamera 夾角 < 90°
+      faceVisible[i] = f.normal.dot(toward) > EPS;
+    }
+
+    idx = 0;
+    for (i = 0; i < edges.length; i++) {
+      e = edges[i];
+      if (e.faces.length === 1) {
+        // 邊界邊（理論上封閉體唔應出現）：該面可見則粗
+        isThick = faceVisible[e.faces[0]];
+      } else if (e.faces.length >= 2) {
+        visA = faceVisible[e.faces[0]];
+        visB = faceVisible[e.faces[1]];
+        // XOR：恰好一面可見 → 粗線
+        isThick = (visA !== visB);
+      } else {
+        isThick = false;
+      }
+
+      // 教學：粗邊用紅粗線；其餘「至少一面可見」嘅邊用幼線。
+      // 若隱藏紅粗線，粗邊改以幼線顯示，避免邊線消失。
+      var drawAsThin = false;
+      if (e.faces.length >= 1) {
+        var anyVis = e.faces.some(function (fi) { return faceVisible[fi]; });
+        if (anyVis && (!isThick || !showThick)) drawAsThin = true;
+      }
+
+      if (drawAsThin) {
+        thinPositions[idx++] = e.a.x; thinPositions[idx++] = e.a.y; thinPositions[idx++] = e.a.z;
+        thinPositions[idx++] = e.b.x; thinPositions[idx++] = e.b.y; thinPositions[idx++] = e.b.z;
+      }
+
+      if (e.thickMesh) e.thickMesh.visible = isThick && showThick;
+    }
+    // 清掉未用嘅 thin buffer
+    while (idx < thinPositions.length) thinPositions[idx++] = 0;
+    thinGeo.attributes.position.needsUpdate = true;
+    thinGeo.setDrawRange(0, idx / 3);
+  }
+
+  var showThick = true;
+  var showThin = true;
+
+  // ---------- UI ----------
+  function resetView() {
+    camera.position.copy(defaultCamPos);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  }
+
+  document.getElementById('btn-reset').addEventListener('click', resetView);
+
+  document.getElementById('btn-thick').addEventListener('click', function () {
+    showThick = !showThick;
+    this.classList.toggle('active', showThick);
+    updateSilhouette();
+  });
+
+  document.getElementById('btn-thin').addEventListener('click', function () {
+    showThin = !showThin;
+    thinLines.visible = showThin;
+    this.classList.toggle('active-green', showThin);
+  });
+
+  var ruleCard = document.getElementById('rule-card');
+  document.getElementById('btn-rule').addEventListener('click', function () {
+    var hide = !ruleCard.classList.contains('hidden');
+    ruleCard.classList.toggle('hidden', hide);
+    this.classList.toggle('active-green', !hide);
+  });
+
+  var refPanel = document.getElementById('ref-panel');
+  var btnRef = document.getElementById('btn-ref');
+  var lightbox = document.getElementById('lightbox');
+  btnRef.addEventListener('click', function () {
+    var show = !refPanel.classList.contains('visible');
+    refPanel.classList.toggle('visible', show);
+    refPanel.setAttribute('aria-hidden', show ? 'false' : 'true');
+    btnRef.classList.toggle('active', show);
+  });
+  document.getElementById('ref-thumb').addEventListener('click', function () {
+    lightbox.classList.add('visible');
+    lightbox.setAttribute('aria-hidden', 'false');
+  });
+  lightbox.addEventListener('click', function () {
+    lightbox.classList.remove('visible');
+    lightbox.setAttribute('aria-hidden', 'true');
+  });
+
+  function onResize() {
+    var w = wrap.clientWidth;
+    var h = wrap.clientHeight;
+    camera.aspect = w / Math.max(h, 1);
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  window.addEventListener('resize', onResize);
+  onResize();
+
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    updateSilhouette();
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+  </script>
+</body>
+</html>
