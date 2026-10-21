@@ -12,8 +12,14 @@
 
 ## 線上頁面
 
-GitHub Pages：<https://neilfoto.github.io/thick-thin-lines/>
+預期網址：<https://neilfoto.github.io/thick-thin-lines/>
 
-若連結尚未開啟，請到儲存庫 **Settings → Pages**，來源選 **Deploy from a branch**，分支選 **main**、資料夾選 **/ (root)**，然後儲存。部署通常需要一兩分鐘。
+網站檔案已在 `main` 分支根目錄。GitHub Pages 仍須由有管理權限的帳戶開啟一次，網址才會生效：
+
+1. 打開 [Settings → Pages](https://github.com/neilfoto/thick-thin-lines/settings/pages)。
+2. **Build and deployment** 的 **Source** 選 **Deploy from a branch**。
+3. 分支選 **main**，資料夾選 **/ (root)**，按 **Save**。
+
+儲存後等一兩分鐘再開上面的網址。
 
 `vendor/` 內的 Three.js 與 OrbitControls 為 MIT 授權。
